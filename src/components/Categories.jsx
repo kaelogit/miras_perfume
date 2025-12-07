@@ -1,29 +1,30 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const Categories = () => {
   const categories = [
     {
       id: 1,
       title: "Arabian Luxury",
-      handle: "arabian-oud",
-      desc: "Lattafa & Middle Eastern Gems.",
-      image: "https://images.unsplash.com/photo-1547887537-6158d64c35e4?q=80&w=2574&auto=format&fit=crop", 
+      link: "/shop?type=arabian", 
+      desc: "Rich Ouds & Long-lasting Gems.",
+      image: "/images/categories/arabian.jpg", 
       btnText: "Shop Arabian"
     },
     {
       id: 2,
       title: "Designer Icons",
-      handle: "designer-brands",
-      desc: "Dior, Chanel, YSL.",
-      image: "https://images.unsplash.com/photo-1595425970377-c9703cf48b6d?q=80&w=2535&auto=format&fit=crop",
+      link: "/shop?type=designer",
+      desc: "Dior, Chanel, YSL Classics.",
+      image: "/images/categories/designer.jpg",
       btnText: "Shop Designer"
     },
     {
       id: 3,
       title: "Niche Exclusives",
-      handle: "niche-collection",
-      desc: "Creed, MFK, Roja.",
-      image: "https://images.unsplash.com/photo-1617239476458-9569a5c435b9?q=80&w=2574&auto=format&fit=crop", 
+      link: "/shop?type=niche",
+      desc: "Creed, MFK, Roja Parfums.",
+      image: "/images/categories/niche.jpg", 
       btnText: "Shop Niche"
     }
   ];
@@ -34,10 +35,10 @@ const Categories = () => {
         
         <div className="text-center mb-10 md:mb-16">
           <h2 className="font-serif text-3xl md:text-4xl text-slate-900 mb-3">
-            Browse by Collection
+            Curated Collections
           </h2>
           <p className="text-slate-500 font-light text-sm md:text-base max-w-lg mx-auto">
-            From trending Arabian Ouds to timeless French classics.
+            Explore our hand-picked categories for every personality.
           </p>
         </div>
 
@@ -45,10 +46,9 @@ const Categories = () => {
           {categories.map((cat) => (
             <div 
               key={cat.id} 
-              // FIXED: h-[280px] for mobile, h-[500px] for desktop
               className="group relative h-[280px] md:h-[500px] overflow-hidden rounded-md shadow-sm hover:shadow-md transition-shadow"
             >
-              <a href={`/shop/${cat.handle}`} className="block h-full w-full">
+              <Link to={cat.link} className="block h-full w-full">
                 <div className="absolute inset-0 bg-slate-200">
                   <img src={cat.image} alt={cat.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                 </div>
@@ -65,7 +65,7 @@ const Categories = () => {
                     {cat.btnText}
                   </span>
                 </div>
-              </a>
+              </Link>
             </div>
           ))}
         </div>

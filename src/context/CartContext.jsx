@@ -5,8 +5,8 @@ const CartContext = createContext();
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [notification, setNotification] = useState(null); 
 
-  // Load cart from LocalStorage on start (so items stay after refresh)
   useEffect(() => {
     const savedCart = localStorage.getItem('miras-cart');
     if (savedCart) {
@@ -14,31 +14,34 @@ export const CartProvider = ({ children }) => {
     }
   }, []);
 
-  // Save to LocalStorage whenever cart changes
   useEffect(() => {
     localStorage.setItem('miras-cart', JSON.stringify(cartItems));
   }, [cartItems]);
 
   const addToCart = (product, quantity) => {
     setCartItems(prev => {
-      // Check if item already exists
       const existing = prev.find(item => item.id === product.id);
       if (existing) {
-        // If yes, just increase quantity
         return prev.map(item => 
           item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item
         );
       }
-      // If no, add new item
       return [...prev, { ...product, quantity }];
     });
-    // Open the drawer automatically to show user it worked
-    setIsCartOpen(true);
+    
+    setNotification(`${quantity}x ${product.name} Added`);
   };
 
   const removeFromCart = (id) => {
     setCartItems(prev => prev.filter(item => item.id !== id));
   };
+
+  const clearCart = () => {
+    setCartItems([]);
+    localStorage.removeItem('miras-cart'); 
+  };
+
+  const clearNotification = () => setNotification(null);
 
   const cartTotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
   const cartCount = cartItems.reduce((count, item) => count + item.quantity, 0);
@@ -48,10 +51,13 @@ export const CartProvider = ({ children }) => {
       cartItems, 
       addToCart, 
       removeFromCart, 
+      clearCart, 
       cartTotal, 
       cartCount,
       isCartOpen, 
-      setIsCartOpen 
+      setIsCartOpen,
+      notification,       
+      clearNotification
     }}>
       {children}
     </CartContext.Provider>

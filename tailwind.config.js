@@ -8,19 +8,19 @@ export default {
     extend: {
       colors: {
         brand: {
-          light: '#FDF2F0', // Very light pink for backgrounds
-          DEFAULT: '#E29578', // Dusty Rose (Our Main Color)
-          dark: '#D08266',    // Darker Rose for hover
+          light: '#FDF2F0', 
+          DEFAULT: '#E29578', 
+          dark: '#D08266',    
         },
         slate: {
           50: '#F8FAFC',
-          800: '#333333',     // Our "Dark Gray" text
+          800: '#333333',     
           900: '#0F172A',
         }
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
-        serif: ['Playfair Display', 'serif'], // Good for "Luxury" headings
+        serif: ['Playfair Display', 'serif'], 
       }
     },
   },
