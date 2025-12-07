@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { db } from '../firebase'; 
 import { collection, addDoc } from 'firebase/firestore'; 
+import { usePaystackPayment } from 'react-paystack'; 
 
 const Checkout = () => {
   const { cartItems, cartTotal, clearCart } = useCart();
-  const [isProcessing, setIsProcessing] = useState(false);
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
   
   const [formData, setFormData] = useState({
     email: '', phone: '', firstName: '', lastName: '',
@@ -23,65 +25,31 @@ const Checkout = () => {
 
   const finalTotal = cartTotal; 
 
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = "https://js.paystack.co/v1/inline.js";
-    script.async = true;
-    document.body.appendChild(script);
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
+  const config = {
+    reference: (new Date()).getTime().toString(),
+    email: formData.email,
+    amount: Math.ceil(finalTotal * 100),
+    publicKey: import.meta.env.VITE_PAYSTACK_KEY, 
+    firstname: formData.firstName,
+    lastname: formData.lastName,
+    phone: formData.phone,
+  };
+
+  const initializePayment = usePaystackPayment(config);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const payWithPaystack = (e) => {
-    e.preventDefault();
+  const onSuccess = async (reference) => {
+    setLoading(true); 
+    console.log("PAYMENT SUCCESSFUL! Ref:", reference);
 
-    if (!formData.email || !formData.phone || !formData.firstName || !formData.address) {
-      alert("Please fill in all contact and shipping details.");
-      return;
-    }
-
-    if (!window.PaystackPop) {
-      alert("Paystack failed to load. Please refresh the page.");
-      return;
-    }
-
-    const handler = window.PaystackPop.setup({
-      key: 'pk_test_fed9bf23a9bf19fe8d89f9c56d0d84f56eb77ded', // Your Key
-      email: formData.email,
-      amount: Math.ceil(finalTotal * 100),
-      firstname: formData.firstName,
-      lastname: formData.lastName,
-      phone: formData.phone,
-      metadata: {
-        custom_fields: [
-          {
-            display_name: "Mobile Number",
-            variable_name: "mobile_number",
-            value: formData.phone
-          }
-        ]
-      },
-      
-      callback: function(response) {
-        handleSuccess(response);
-      },
-
-      onClose: function() {
-        alert('Transaction cancelled.');
-      }
-    });
-
-    handler.openIframe();
-  };
-
-  const handleSuccess = async (reference) => {
-    setIsProcessing(true); 
-    console.log("Payment Complete:", reference);
+    const safetyTimer = setTimeout(() => {
+      console.log("Force redirecting...");
+      clearCart();
+      window.location.href = '/success';
+    }, 3000);
 
     try {
       const orderData = {
@@ -95,21 +63,33 @@ const Checkout = () => {
       };
 
       await addDoc(collection(db, "orders"), orderData);
-      
-      if (typeof clearCart === 'function') {
-        clearCart();
-      }
-
-      window.location.replace('/success');
+      console.log("Order Saved to DB");
 
     } catch (error) {
-      console.error("DB Error:", error);
-      
-      if (typeof clearCart === 'function') {
-        clearCart();
-      }
-      window.location.replace('/success');
+      console.error("Firebase Error:", error);
     }
+
+    clearTimeout(safetyTimer); 
+    clearCart();
+    window.location.href = '/success'; 
+  };
+
+  const onClose = () => {
+    console.log("Payment closed/cancelled");
+    setLoading(false); 
+    alert("Payment cancelled.");
+  };
+
+  const handlePay = (e) => {
+    e.preventDefault();
+    
+    if (!formData.email || !formData.phone || !formData.firstName || !formData.address) {
+      alert("Please fill in all contact and shipping details.");
+      return;
+    }
+
+    setLoading(true); 
+    initializePayment(onSuccess, onClose);
   };
 
   if (cartItems.length === 0) {
@@ -124,7 +104,7 @@ const Checkout = () => {
   return (
     <div className="min-h-screen bg-white font-sans text-slate-900 pt-24 pb-20 relative">
       
-      {isProcessing && (
+      {loading && (
         <div className="fixed inset-0 z-[100] bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center text-center px-4">
           <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-brand-DEFAULT mb-6"></div>
           <h2 className="font-serif text-3xl text-slate-900 mb-2">Processing Order</h2>
@@ -199,11 +179,11 @@ const Checkout = () => {
               </div>
 
               <button 
-                onClick={payWithPaystack} 
-                disabled={isProcessing}
+                onClick={handlePay} 
+                disabled={loading}
                 className="w-full bg-slate-900 text-white py-5 text-sm font-bold uppercase tracking-[0.2em] hover:bg-brand-DEFAULT transition-colors duration-300 rounded-sm shadow-lg flex justify-center items-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                {isProcessing ? (
+                {loading ? (
                   <>
                     <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
                     Processing...
