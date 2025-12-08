@@ -7,6 +7,7 @@ const AllProducts = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Fetch Products
   const fetchProducts = async () => {
     try {
       const querySnapshot = await getDocs(collection(db, "products"));
@@ -26,10 +27,12 @@ const AllProducts = () => {
     fetchProducts();
   }, []);
 
+  // Delete Product
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this product? This cannot be undone.")) {
       try {
         await deleteDoc(doc(db, "products", id));
+        // Remove from local state instantly
         setProducts(products.filter(product => product.id !== id));
       } catch (error) {
         alert("Error deleting product");
@@ -42,15 +45,17 @@ const AllProducts = () => {
   return (
     <div className="max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="font-serif text-3xl text-slate-900">Inventory ({products.length})</h1>
+        <h1 className="font-serif text-2xl md:text-3xl text-slate-900">Inventory ({products.length})</h1>
         <Link to="/admin/add-product" className="bg-slate-900 text-white px-6 py-3 text-xs font-bold uppercase tracking-widest rounded-sm hover:bg-brand-DEFAULT transition-colors">
           + Add New
         </Link>
       </div>
 
       <div className="bg-white border border-slate-100 rounded-sm shadow-sm overflow-hidden">
+        {/* Scroll wrapper for mobile */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          {/* Min-width ensures columns don't squash on phone screens */}
+          <table className="w-full text-left min-w-[800px]">
             <thead className="bg-slate-50 border-b border-slate-100">
               <tr>
                 <th className="p-4 text-xs font-bold uppercase text-slate-500 tracking-wider">Product</th>
@@ -68,7 +73,7 @@ const AllProducts = () => {
                       <div className="w-12 h-12 bg-slate-100 rounded-sm overflow-hidden flex-shrink-0">
                         <img src={product.image} alt="" className="w-full h-full object-cover" />
                       </div>
-                      <span className="font-medium text-slate-900 text-sm">{product.name}</span>
+                      <span className="font-medium text-slate-900 text-sm line-clamp-1 max-w-[200px]">{product.name}</span>
                     </div>
                   </td>
                   <td className="p-4 text-sm text-slate-600">{product.brand}</td>
@@ -83,9 +88,10 @@ const AllProducts = () => {
                     </span>
                   </td>
                   <td className="p-4 text-right">
+                    {/* FIXED: Larger button area for mobile touch */}
                     <button 
                       onClick={() => handleDelete(product.id)}
-                      className="text-red-400 hover:text-red-600 text-xs font-bold uppercase tracking-wide"
+                      className="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white px-4 py-2 rounded-sm text-xs font-bold uppercase tracking-wide transition-colors"
                     >
                       Delete
                     </button>
