@@ -5,7 +5,8 @@ import { collection, addDoc } from 'firebase/firestore';
 
 const Footer = () => {
   const [email, setEmail] = useState('');
-  const [status, setStatus] = useState(''); 
+  const [status, setStatus] = useState(''); // 'loading', 'success', 'error'
+
   const handleSubscribe = async (e) => {
     e.preventDefault();
     if (!email) return;
@@ -36,9 +37,8 @@ const Footer = () => {
               Your premier destination for authentic luxury fragrances. Based in Ogun State, delivering happiness nationwide.
             </p>
             <div className="flex space-x-4">
-              <a href="https://www.tiktok.com/@tasuedperfumevendor1" className="text-slate-400 hover:text-brand-DEFAULT transition">Tiktok</a>
-              <a href="https://wa.me/2349020184254" 
- className="text-slate-400 hover:text-brand-DEFAULT transition">WhatsApp</a>
+              <a href="#" className="text-slate-400 hover:text-brand-DEFAULT transition">Instagram</a>
+              <a href="#" className="text-slate-400 hover:text-brand-DEFAULT transition">WhatsApp</a>
             </div>
           </div>
 
@@ -89,11 +89,22 @@ const Footer = () => {
 
         </div>
         
-        <div className="border-t border-slate-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-slate-500 gap-4 md:gap-0 text-center">
-          <p>&copy; 2025 Mira's Perfume. Ogun State, Nigeria.</p>
-          <div className="flex space-x-6">
-            <Link to="#" className="hover:text-white transition">Privacy Policy</Link>
-            <Link to="#" className="hover:text-white transition">Terms of Service</Link>
+        <div className="border-t border-slate-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-slate-500 gap-4 md:gap-0">
+          <p className="text-center md:text-left">&copy; 2025 Mira's Perfume. Ogun State, Nigeria.</p>
+          
+          <div className="flex flex-wrap justify-center md:justify-end items-center gap-6">
+            <Link to="/privacy" className="hover:text-white transition">Privacy Policy</Link>
+            <Link to="/terms" className="hover:text-white transition">Terms of Service</Link>
+            
+            {/* Developer Credit */}
+            <a 
+              href="https://kaelogit.github.io/my_portfolio/"
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-slate-600 hover:text-brand-DEFAULT transition-colors font-medium ml-0 md:ml-4 border-l-0 md:border-l border-slate-700 pl-0 md:pl-4"
+            >
+              Built by Kaelodev
+            </a>
           </div>
         </div>
 

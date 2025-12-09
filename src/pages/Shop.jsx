@@ -7,26 +7,31 @@ import { collection, getDocs } from 'firebase/firestore';
 const Shop = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   
-  const initialFilter = searchParams.get('filter'); 
+  // URL Params
+  const initialFilter = searchParams.get('filter'); // best-sellers, new, men, women
   const initialBrand = searchParams.get('brand');
-  const initialType = searchParams.get('type');    
-  const initialScent = searchParams.get('scent');  
+  const initialType = searchParams.get('type');     // arabian, designer, niche, combo
+  const initialScent = searchParams.get('scent');   // woody, fresh, etc.
   
   const { addToCart } = useCart();
   
+  // Data States
   const [products, setProducts] = useState([]); 
   const [filteredProducts, setFilteredProducts] = useState([]); 
   const [loading, setLoading] = useState(true);
   
+  // Filter UI States
   const [activeGender, setActiveGender] = useState('all');
   const [activeType, setActiveType] = useState('all');
   const [activeScent, setActiveScent] = useState('all');
   const [activeBrand, setActiveBrand] = useState('all');
 
-  const [isFilterOpen, setIsFilterOpen] = useState(false); 
-  const [brandGroups, setBrandGroups] = useState({}); 
-  const [openBrandGroup, setOpenBrandGroup] = useState(null); 
+  // UI States
+  const [isFilterOpen, setIsFilterOpen] = useState(false); // Mobile Drawer
+  const [brandGroups, setBrandGroups] = useState({}); // A-Z Groups
+  const [openBrandGroup, setOpenBrandGroup] = useState(null); // Accordion state
 
+  // 1. FETCH DATA & ORGANIZE BRANDS
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
@@ -69,7 +74,7 @@ const Shop = () => {
     setBrandGroups(groups);
   };
 
-  
+  // 2. EXCLUSIVE FILTER HANDLERS
   const handleGenderChange = (gender) => {
     setActiveGender(gender);
     if (gender !== 'all') {
@@ -111,6 +116,7 @@ const Shop = () => {
     }
   };
 
+  // 3. SYNC URL PARAMS
   useEffect(() => {
     if (initialBrand) {
       setActiveBrand(initialBrand);
@@ -136,17 +142,14 @@ const Shop = () => {
       setActiveGender('unisex');
       setActiveType('all'); setActiveScent('all'); setActiveBrand('all');
     }
-    else if (!initialFilter) {
-    }
-
   }, [initialType, initialScent, initialBrand, initialFilter]);
 
+  // 4. MASTER FILTER LOGIC
   useEffect(() => {
     if (products.length === 0) return;
 
     let result = products;
 
-    
     if (activeBrand !== 'all') {
       result = result.filter(p => p.brand && p.brand.toLowerCase() === activeBrand.toLowerCase());
     }
@@ -203,9 +206,11 @@ const Shop = () => {
     return "All Fragrances";
   };
 
+  // --- REUSABLE SIDEBAR CONTENT ---
   const FilterSidebar = () => (
     <div className="space-y-10">
       
+      {/* 1. GENDER */}
       <div>
         <h3 className="font-bold text-xs uppercase tracking-widest text-slate-900 mb-4 border-b border-slate-100 pb-2">Gender</h3>
         <div className="space-y-3">
@@ -223,6 +228,7 @@ const Shop = () => {
         </div>
       </div>
 
+      {/* 2. COLLECTION TYPE (UPDATED WITH COMBO) */}
       <div>
         <h3 className="font-bold text-xs uppercase tracking-widest text-slate-900 mb-4 border-b border-slate-100 pb-2">Collection Type</h3>
         <div className="space-y-3">
@@ -231,6 +237,7 @@ const Shop = () => {
             { id: 'designer', label: 'Designer' },
             { id: 'niche', label: 'Niche / Exclusive' },
             { id: 'arabian', label: 'Arabian / Oud' },
+            { id: 'combo', label: 'Combos & Sets' }, // NEW OPTION
           ].map(t => (
             <label key={t.id} className="flex items-center gap-3 cursor-pointer group">
               <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${activeType === t.id ? 'border-brand-DEFAULT' : 'border-slate-300'}`}>
@@ -243,6 +250,7 @@ const Shop = () => {
         </div>
       </div>
 
+      {/* 3. SCENT PROFILE */}
       <div>
         <h3 className="font-bold text-xs uppercase tracking-widest text-slate-900 mb-4 border-b border-slate-100 pb-2">Scent Profile</h3>
         <div className="space-y-3">
@@ -265,6 +273,7 @@ const Shop = () => {
         </div>
       </div>
 
+      {/* 4. BRANDS */}
       <div>
         <h3 className="font-bold text-xs uppercase tracking-widest text-slate-900 mb-4 border-b border-slate-100 pb-2">Brands</h3>
         <div className="space-y-2">
@@ -317,12 +326,14 @@ const Shop = () => {
     <div className="bg-white min-h-screen pt-32 pb-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
+        {/* Header */}
         <div className="text-center mb-10 md:mb-16 relative">
           <h1 className="font-serif text-3xl md:text-4xl text-slate-900 mb-2 capitalize">
             {getTitle()}
           </h1>
           <div className="w-24 h-1 bg-brand-DEFAULT mx-auto mt-4"></div>
           
+          {/* Mobile Filter Button */}
           <div className="md:hidden mt-6">
             <button 
               onClick={() => setIsFilterOpen(true)}
@@ -336,10 +347,12 @@ const Shop = () => {
 
         <div className="flex flex-col md:flex-row gap-12">
           
+          {/* SIDEBAR (Desktop) */}
           <div className="w-full md:w-64 hidden md:block">
             <FilterSidebar />
           </div>
 
+          {/* SIDEBAR (Mobile Drawer) */}
           {isFilterOpen && (
             <div className="fixed inset-0 z-[60] flex md:hidden">
               <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsFilterOpen(false)}></div>
@@ -355,6 +368,7 @@ const Shop = () => {
             </div>
           )}
 
+          {/* GRID */}
           <div className="flex-1">
             
             {filteredProducts.length === 0 && (
@@ -369,6 +383,7 @@ const Shop = () => {
                 <div key={product.id} className="group relative">
                   
                   <Link to={`/product/${product.id}`} className="block">
+                    {/* Image */}
                     <div className="relative aspect-[4/5] bg-slate-100 overflow-hidden rounded-sm mb-3">
                       {product.isBestSeller && (
                         <span className="absolute top-2 left-2 bg-slate-900 text-white text-[10px] font-bold px-2 py-1 uppercase tracking-widest z-10">Best Seller</span>
@@ -380,6 +395,7 @@ const Shop = () => {
                       <img src={product.image} alt={product.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                     </div>
 
+                    {/* Info */}
                     <div className="flex justify-between items-start gap-3">
                         <div className="flex-1 min-w-0">
                             <h3 className="text-slate-500 text-[10px] md:text-xs font-bold uppercase tracking-widest mb-1 truncate">
@@ -393,6 +409,7 @@ const Shop = () => {
                             </p>
                         </div>
 
+                        {/* Quick Add Button */}
                         <button 
                             onClick={(e) => handleQuickAdd(e, product)}
                             className="w-8 h-8 md:w-10 md:h-10 border border-slate-200 rounded-full flex items-center justify-center text-slate-800 hover:bg-slate-900 hover:border-slate-900 hover:text-white transition-all flex-shrink-0"

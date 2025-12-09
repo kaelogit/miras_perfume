@@ -26,6 +26,14 @@ const Categories = () => {
       desc: "Creed, MFK, Roja Parfums.",
       image: "/images/categories/niche.jpg", 
       btnText: "Shop Niche"
+    },
+    {
+      id: 4,
+      title: "Combos & Sets",
+      link: "/shop?type=combo",
+      desc: "Perfect Gift Sets & Bundles.",
+      image: "/images/categories/set.jpg", 
+      btnText: "Shop Sets"
     }
   ];
 
@@ -42,11 +50,11 @@ const Categories = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           {categories.map((cat) => (
             <div 
               key={cat.id} 
-              className="group relative h-[280px] md:h-[500px] overflow-hidden rounded-md shadow-sm hover:shadow-md transition-shadow"
+              className="group relative h-[280px] md:h-[450px] overflow-hidden rounded-md shadow-sm hover:shadow-md transition-shadow"
             >
               <Link to={cat.link} className="block h-full w-full">
                 <div className="absolute inset-0 bg-slate-200">
@@ -54,8 +62,8 @@ const Categories = () => {
                 </div>
                 <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 transition-colors duration-300"></div>
 
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                  <h3 className="font-serif text-xl md:text-2xl text-white mb-1 tracking-wide drop-shadow-md">
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                  <h3 className="font-serif text-lg md:text-xl text-white mb-1 tracking-wide drop-shadow-md">
                     {cat.title}
                   </h3>
                   <p className="text-white/90 text-xs md:text-sm font-medium mb-4 drop-shadow-sm">

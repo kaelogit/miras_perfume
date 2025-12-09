@@ -5,10 +5,12 @@ import { collection, addDoc, getDocs } from 'firebase/firestore';
 const AddProduct = () => {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('');
-  const [existingBrands, setExistingBrands] = useState([]); 
+  const [existingBrands, setExistingBrands] = useState([]); // Store fetched brands
 
-  const CLOUD_NAME = "dwleqttqa"; 
-  const UPLOAD_PRESET = "miras-present"; 
+  // --- CLOUDINARY CONFIG ---
+  // REPLACE THESE WITH YOUR REAL CREDENTIALS FROM CLOUDINARY DASHBOARD
+  const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME; 
+  const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_PRESET; 
 
   const [formData, setFormData] = useState({
     brand: '',
@@ -27,6 +29,7 @@ const AddProduct = () => {
   const [imageFiles, setImageFiles] = useState([]);
   const [mainImageIndex, setMainImageIndex] = useState(0); 
 
+  // 1. FETCH EXISTING BRANDS ON LOAD
   useEffect(() => {
     const fetchBrands = async () => {
       try {
@@ -37,6 +40,7 @@ const AddProduct = () => {
             brandsSet.add(doc.data().brand);
           }
         });
+        // Sort alphabetically
         setExistingBrands([...brandsSet].sort());
       } catch (err) {
         console.error("Failed to load brands", err);
@@ -71,6 +75,7 @@ const AddProduct = () => {
     if (index <= mainImageIndex) setMainImageIndex(0);
   };
 
+  // UPLOAD LOGIC (Cloudinary)
   const uploadToCloudinary = async (file) => {
     const data = new FormData();
     data.append("file", file);
@@ -96,6 +101,7 @@ const AddProduct = () => {
     try {
       const imageUrls = [];
 
+      // 1. Upload Images
       if (imageFiles.length > 0) {
         for (let i = 0; i < imageFiles.length; i++) {
           setStatus(`Uploading image ${i + 1} of ${imageFiles.length}...`);
@@ -116,7 +122,7 @@ const AddProduct = () => {
         notes: formData.notes.split(',').map(n => n.trim()),
         image: mainImage, 
         images: imageUrls, 
-
+        // Search Keywords for easier finding
         searchKeywords: [
           formData.brand.toLowerCase(), 
           formData.name.toLowerCase(), 
@@ -125,11 +131,13 @@ const AddProduct = () => {
         createdAt: new Date()
       };
 
+      // 3. Save to Firebase
       await addDoc(collection(db, "products"), productData);
 
       setStatus('Success! Product Live.');
       setLoading(false);
       
+      // Reset Form
       setFormData({
         brand: '', name: '', price: '', stock: '', gender: 'women', scentFamily: 'woody', collectionType: 'designer',
         description: '', notes: '', isBestSeller: false, isNewArrival: false
@@ -150,11 +158,12 @@ const AddProduct = () => {
       
       <form onSubmit={handleSubmit} className="bg-white p-8 rounded-sm shadow-sm space-y-6 border border-slate-100">
         
+        {/* BRAND SELECTION (Smart Dropdown) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="label">Brand Name</label>
             <input 
-              list="brand-list" 
+              list="brand-list" // Connects to the datalist below
               name="brand" 
               placeholder="Type or select brand..." 
               className="input-field" 
@@ -162,7 +171,7 @@ const AddProduct = () => {
               onChange={handleChange} 
               required 
             />
-
+            {/* The Dropdown List of existing brands */}
             <datalist id="brand-list">
               {existingBrands.map((b, i) => (
                 <option key={i} value={b} />
@@ -176,15 +185,18 @@ const AddProduct = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Collection Type - UPDATED with "Combos & Sets" */}
           <div>
             <label className="label">Collection Type</label>
             <select name="collectionType" className="input-field bg-white" value={formData.collectionType} onChange={handleChange}>
               <option value="designer">Designer (Western)</option>
               <option value="arabian">Arabian / Oud</option>
               <option value="niche">Niche / Exclusive</option>
+              <option value="combo">Combos & Sets</option> {/* NEW OPTION */}
             </select>
           </div>
 
+          {/* Scent Family */}
           <div>
             <label className="label">Scent Family</label>
             <select name="scentFamily" className="input-field bg-white" value={formData.scentFamily} onChange={handleChange}>
@@ -196,6 +208,7 @@ const AddProduct = () => {
             </select>
           </div>
 
+          {/* Gender */}
           <div>
             <label className="label">Gender</label>
             <select name="gender" className="input-field bg-white" value={formData.gender} onChange={handleChange}>
@@ -227,6 +240,7 @@ const AddProduct = () => {
             <textarea name="description" rows="3" className="input-field" value={formData.description} onChange={handleChange} required />
         </div>
 
+        {/* IMAGE UPLOAD SECTION */}
         <div className="bg-slate-50 p-4 rounded-sm border border-slate-200 border-dashed">
             <label className="label">Product Images (Max 3)</label>
             <div className="flex flex-col gap-3">

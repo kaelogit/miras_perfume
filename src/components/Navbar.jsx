@@ -15,11 +15,11 @@ const Navbar = () => {
     setIsShopDropdownOpen(false);
   };
 
-  // CORRECTED LINKS: Using '?type=' for categories so filtering works
   const collections = [
     { name: "Arabian / Oud", link: "/shop?type=arabian" },
     { name: "Designer / Western", link: "/shop?type=designer" },
     { name: "Niche / Exclusive", link: "/shop?type=niche" },
+    { name: "Combos & Sets", link: "/shop?type=combo" }, // NEW LINK
     { name: "Men's Cologne", link: "/shop?filter=men" },
     { name: "Women's Perfume", link: "/shop?filter=women" },
     { name: "Unisex", link: "/shop?filter=unisex" },
@@ -51,7 +51,9 @@ const Navbar = () => {
 
             <div className="flex-shrink-0 flex items-center justify-center flex-1 md:flex-none">
               <Link to="/" onClick={closeAll}>
+                {/* To use an image logo, uncomment line below and add file to public/images/logo.png */}
                 <img src="/images/categories/logo.jpg" alt="Mira's" className="h-10 md:h-14 w-auto object-contain" />
+                {/* <h1 className="font-serif text-2xl text-slate-900 tracking-[0.2em] font-bold">MIRA'S</h1> */}
               </Link>
             </div>
 
