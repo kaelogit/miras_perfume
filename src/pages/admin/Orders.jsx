@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../../firebase';
-import { collection, getDocs, updateDoc, doc, orderBy, query } from 'firebase/firestore';
+import { supabase, mapOrder, formatOrderDate } from '../../supabase';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
@@ -10,13 +9,9 @@ const Orders = () => {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const q = query(collection(db, "orders"), orderBy("date", "desc"));
-        const snapshot = await getDocs(q);
-        const ordersList = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setOrders(ordersList);
+        const { data: rows, error } = await supabase.from('orders').select('*').order('date', { ascending: false });
+        if (error) throw error;
+        setOrders((rows || []).map(mapOrder));
       } catch (error) {
         console.error("Error fetching orders:", error);
       } finally {
@@ -29,10 +24,9 @@ const Orders = () => {
 
   const handleStatusChange = async (orderId, newStatus) => {
     try {
-      const orderRef = doc(db, "orders", orderId);
-      await updateDoc(orderRef, { status: newStatus });
-      
-      setOrders(prev => prev.map(order => 
+      const { error } = await supabase.from('orders').update({ status: newStatus }).eq('id', orderId);
+      if (error) throw error;
+      setOrders(prev => prev.map(order =>
         order.id === orderId ? { ...order, status: newStatus } : order
       ));
     } catch (error) {
@@ -52,11 +46,11 @@ const Orders = () => {
     }
 
     try {
-      const orderRef = doc(db, "orders", orderId);
-      await updateDoc(orderRef, { 
+      const { error } = await supabase.from('orders').update({
         courier: courierInput.value,
-        trackingNumber: trackingInput.value
-      });
+        tracking_number: trackingInput.value
+      }).eq('id', orderId);
+      if (error) throw error;
       
       setTimeout(() => setSavingId(null), 1500);
       
@@ -85,7 +79,7 @@ const Orders = () => {
                 <div>
                   <h3 className="font-bold text-lg text-slate-900">{order.orderId || "Order"}</h3>
                   <p className="text-xs text-slate-400">
-                    {order.date?.toDate ? order.date.toDate().toLocaleString() : "Date Unknown"}
+                    {formatOrderDate(order.date)}
                   </p>
                 </div>
                 

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { supabase, mapProduct } from '../supabase';
 import { useCart } from '../context/CartContext';
 import { Link } from 'react-router-dom';
 
@@ -11,12 +10,9 @@ const FeaturedProduct = () => {
   useEffect(() => {
     const fetchRandomProduct = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "products"));
-        const productsList = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-
+        const { data: rows, error } = await supabase.from('products').select('*');
+        if (error) throw error;
+        const productsList = (rows || []).map(mapProduct);
         if (productsList.length > 0) {
           const randomIndex = Math.floor(Math.random() * productsList.length);
           setProduct(productsList[randomIndex]);

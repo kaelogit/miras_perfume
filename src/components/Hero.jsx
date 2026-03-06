@@ -1,19 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-const Hero = () => {
-  const [currentImage, setCurrentImage] = useState('');
-
-  const heroImages = [
-    "/images/hero/hero-bg.jpg", 
-    "/images/hero/hero-bg2.jpg",
-    "/images/hero/hero-bg3.jpg"  
+const heroImages = [
+  "/images/hero/hero-bg.jpg",
+  "/images/hero/hero-bg2.jpg",
+  "/images/hero/hero-bg3.jpg"
 ];
 
-  useEffect(() => {
-    const randomIndex = Math.floor(Math.random() * heroImages.length);
-    setCurrentImage(heroImages[randomIndex]);
-  }, []);
+const Hero = () => {
+  const [currentImage] = useState(() => heroImages[Math.floor(Math.random() * heroImages.length)]);
 
   return (
     <div className="relative bg-brand-light/30 w-full flex flex-col lg:flex-row items-center pt-24 pb-12 lg:min-h-[90vh] lg:pt-0">

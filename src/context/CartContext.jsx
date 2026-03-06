@@ -10,6 +10,7 @@ export const CartProvider = ({ children }) => {
   useEffect(() => {
     const savedCart = localStorage.getItem('miras-cart');
     if (savedCart) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate cart from localStorage
       setCartItems(JSON.parse(savedCart));
     }
   }, []);
@@ -64,4 +65,5 @@ export const CartProvider = ({ children }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- useCart is a valid hook export
 export const useCart = () => useContext(CartContext);

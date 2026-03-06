@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { db } from '../../firebase';
-import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
+import { supabase, mapOrder } from '../../supabase';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({
@@ -15,31 +14,33 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-
-        const ordersSnap = await getDocs(collection(db, "orders"));
+        const { data: orderRows, error: orderErr } = await supabase.from('orders').select('*');
+        if (orderErr) throw orderErr;
         let totalRevenue = 0;
         let pending = 0;
-        
-        ordersSnap.forEach(doc => {
-          const data = doc.data();
-          totalRevenue += Number(data.total) || 0;
-          if (data.status === 'Pending') pending++;
+        (orderRows || []).forEach((row) => {
+          totalRevenue += Number(row.total) || 0;
+          if (row.status === 'Pending') pending++;
         });
 
-        const productsSnap = await getDocs(collection(db, "products"));
+        const { data: productRows, error: productErr } = await supabase.from('products').select('id');
+        if (productErr) throw productErr;
 
-        const recentQ = query(collection(db, "orders"), orderBy("date", "desc"), limit(5));
-        const recentSnap = await getDocs(recentQ);
-        const recentList = recentSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const { data: recentRows, error: recentErr } = await supabase
+          .from('orders')
+          .select('*')
+          .order('date', { ascending: false })
+          .limit(5);
+        if (recentErr) throw recentErr;
+        const recentList = (recentRows || []).map(mapOrder);
 
         setStats({
           revenue: totalRevenue,
-          ordersCount: ordersSnap.size,
-          productsCount: productsSnap.size,
+          ordersCount: (orderRows || []).length,
+          productsCount: (productRows || []).length,
           pendingOrders: pending
         });
         setRecentOrders(recentList);
-
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {

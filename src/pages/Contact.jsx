@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { db } from '../firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { supabase } from '../supabase';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -17,11 +16,15 @@ const Contact = () => {
     setStatus('Sending...');
     
     try {
-      await addDoc(collection(db, "messages"), {
-        ...formData,
-        date: new Date(),
-        read: false
+      const { error } = await supabase.from('messages').insert({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || null,
+        subject: formData.subject || null,
+        message: formData.message,
+        read: false,
       });
+      if (error) throw error;
       setStatus('Message Sent! We will reply shortly.');
       setFormData({ name: '', email: '', phone: '', subject: 'Order Status', message: '' });
     } catch (error) {

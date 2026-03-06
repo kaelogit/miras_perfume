@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
-import { Link, useNavigate } from 'react-router-dom';
-import { db } from '../firebase'; 
-import { collection, addDoc } from 'firebase/firestore'; 
-import { usePaystackPayment } from 'react-paystack'; 
+import { Link } from 'react-router-dom';
+import { supabase } from '../supabase';
+import { usePaystackPayment } from 'react-paystack';
 
 const Checkout = () => {
   const { cartItems, cartTotal, clearCart } = useCart();
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -53,20 +51,20 @@ const Checkout = () => {
 
     try {
       const orderData = {
+        order_id: `MIRA-${Date.now().toString().slice(-6)}`,
         customer: formData,
         items: cartItems,
         total: finalTotal,
-        paymentRef: reference, 
-        status: 'Pending', 
-        date: new Date(),
-        orderId: `MIRA-${Date.now().toString().slice(-6)}`
+        payment_ref: reference?.reference || null,
+        status: 'Pending',
       };
 
-      await addDoc(collection(db, "orders"), orderData);
+      const { error } = await supabase.from('orders').insert(orderData);
+      if (error) throw error;
       console.log("Order Saved to DB");
 
     } catch (error) {
-      console.error("Firebase Error:", error);
+      console.error("Order save error:", error);
     }
 
     clearTimeout(safetyTimer); 

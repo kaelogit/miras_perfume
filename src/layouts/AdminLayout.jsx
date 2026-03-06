@@ -1,57 +1,67 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
-import { auth } from '../firebase';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { supabase } from '../supabase';
+
+const LinkItem = ({ to, label, currentPath }) => {
+  const isActive = currentPath === to;
+  return (
+    <Link
+      to={to}
+      className={`block px-4 py-3 text-sm font-medium rounded-sm transition-colors ${
+        isActive
+          ? 'bg-brand-DEFAULT text-white'
+          : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+      }`}
+    >
+      {label}
+    </Link>
+  );
+};
 
 const AdminLayout = () => {
-  const [user, setUser] = useState(null);
+  const [, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (!currentUser) {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
         navigate('/admin/login');
       } else {
-        setUser(currentUser);
+        setUser(session.user);
       }
       setLoading(false);
     });
-    return () => unsubscribe();
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        navigate('/admin/login');
+      } else {
+        setUser(session.user);
+      }
+      setLoading(false);
+    });
+
+    return () => subscription?.unsubscribe();
   }, [navigate]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- close sidebar when route changes
     setIsSidebarOpen(false);
   }, [location.pathname]);
 
   const handleLogout = async () => {
-    await signOut(auth);
+    await supabase.auth.signOut();
     navigate('/admin/login');
-  };
-
-  const LinkItem = ({ to, label }) => {
-    const isActive = location.pathname === to;
-    return (
-      <Link 
-        to={to} 
-        className={`block px-4 py-3 text-sm font-medium rounded-sm transition-colors ${
-          isActive 
-            ? 'bg-brand-DEFAULT text-white' 
-            : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-        }`}
-      >
-        {label}
-      </Link>
-    );
   };
 
   if (loading) return <div className="h-screen flex items-center justify-center">Loading Admin...</div>;
 
   return (
     <div className="flex min-h-screen bg-slate-50 font-sans">
-      
+
       <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-slate-900 text-white flex items-center justify-between px-4 z-50 shadow-md">
         <span className="font-serif tracking-widest font-bold">MIRA'S ADMIN</span>
         <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 focus:outline-none">
@@ -63,9 +73,9 @@ const AdminLayout = () => {
         <div className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)}></div>
       )}
 
-      <aside 
+      <aside
         className={`
-          fixed md:static inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white flex flex-col 
+          fixed md:static inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white flex flex-col
           transform transition-transform duration-300 ease-in-out shadow-2xl md:shadow-none
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         `}
@@ -76,20 +86,20 @@ const AdminLayout = () => {
         </div>
 
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto pt-20 md:pt-4">
-          
-          <LinkItem to="/admin/dashboard" label="Overview" />
-          
+
+          <LinkItem to="/admin/dashboard" label="Overview" currentPath={location.pathname} />
+
           <div className="pt-6 pb-2 px-4 text-[10px] uppercase tracking-widest text-slate-600 font-bold">Catalog</div>
-          <LinkItem to="/admin/add-product" label="Add Product" />
-          <LinkItem to="/admin/products" label="All Products" />
-          <LinkItem to="/admin/categories" label="Categories & Brands" />
+          <LinkItem to="/admin/add-product" label="Add Product" currentPath={location.pathname} />
+          <LinkItem to="/admin/products" label="All Products" currentPath={location.pathname} />
+          <LinkItem to="/admin/categories" label="Categories & Brands" currentPath={location.pathname} />
 
           <div className="pt-6 pb-2 px-4 text-[10px] uppercase tracking-widest text-slate-600 font-bold">Business</div>
-          <LinkItem to="/admin/orders" label="Orders & Tracking" />
-          <LinkItem to="/admin/customers" label="Customer History" />
-          
+          <LinkItem to="/admin/orders" label="Orders & Tracking" currentPath={location.pathname} />
+          <LinkItem to="/admin/customers" label="Customer History" currentPath={location.pathname} />
+
           <div className="pt-6 pb-2 px-4 text-[10px] uppercase tracking-widest text-slate-600 font-bold">Communication</div>
-          <LinkItem to="/admin/messages" label="Contact Messages" />
+          <LinkItem to="/admin/messages" label="Contact Messages" currentPath={location.pathname} />
 
         </nav>
 

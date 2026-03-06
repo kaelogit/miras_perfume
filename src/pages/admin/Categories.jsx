@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { db } from '../../firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { supabase } from '../../supabase';
 
 const Categories = () => {
   const [brands, setBrands] = useState([]);
@@ -9,21 +8,17 @@ const Categories = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "products"));
+        const { data: rows, error } = await supabase.from('products').select('brand');
+        if (error) throw error;
         const brandMap = {};
-
-        querySnapshot.forEach(doc => {
-          const b = doc.data().brand;
-          if (b) {
-            brandMap[b] = (brandMap[b] || 0) + 1;
-          }
+        (rows || []).forEach((r) => {
+          const b = r.brand;
+          if (b) brandMap[b] = (brandMap[b] || 0) + 1;
         });
-
         const brandList = Object.keys(brandMap).map(key => ({
           name: key,
           count: brandMap[key]
         })).sort((a, b) => a.name.localeCompare(b.name));
-
         setBrands(brandList);
       } catch (error) {
         console.error("Error fetching brands:", error);

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { db } from '../firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { supabase } from '../supabase';
 
 const Footer = () => {
   const [email, setEmail] = useState('');
@@ -13,10 +12,8 @@ const Footer = () => {
     setStatus('loading');
 
     try {
-      await addDoc(collection(db, "subscribers"), {
-        email: email,
-        date: new Date()
-      });
+      const { error } = await supabase.from('subscribers').insert({ email });
+      if (error) throw error;
       setStatus('success');
       setEmail('');
     } catch (error) {

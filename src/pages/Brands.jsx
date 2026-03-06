@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { db } from '../firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { supabase } from '../supabase';
 
 const Brands = () => {
   const [brandGroups, setBrandGroups] = useState({});
@@ -10,21 +9,16 @@ const Brands = () => {
   useEffect(() => {
     const fetchBrands = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "products"));
+        const { data: rows, error } = await supabase.from('products').select('brand');
+        if (error) throw error;
         const uniqueBrands = new Set();
-        
-        querySnapshot.forEach(doc => {
-          const b = doc.data().brand;
-          if (b) uniqueBrands.add(b.trim());
-        });
-
+        (rows || []).forEach((r) => { if (r.brand) uniqueBrands.add(r.brand.trim()); });
         const groups = {};
         [...uniqueBrands].sort().forEach(brand => {
           const letter = brand.charAt(0).toUpperCase();
           if (!groups[letter]) groups[letter] = [];
           groups[letter].push(brand);
         });
-
         setBrandGroups(groups);
       } catch (error) {
         console.error("Error fetching brands:", error);

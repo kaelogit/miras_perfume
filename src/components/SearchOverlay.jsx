@@ -1,23 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { db } from '../firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { supabase, mapProduct } from '../supabase';
 
 const SearchOverlay = ({ isOpen, onClose }) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
-  const [allProducts, setAllProducts] = useState([]); 
-  const [loading, setLoading] = useState(false);
+  const [allProducts, setAllProducts] = useState([]);
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "products"));
-        const list = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setAllProducts(list);
+        const { data: rows, error } = await supabase.from('products').select('*');
+        if (error) throw error;
+        setAllProducts((rows || []).map(mapProduct));
       } catch (error) {
         console.error("Error fetching products for search:", error);
       }
@@ -26,7 +21,7 @@ const SearchOverlay = ({ isOpen, onClose }) => {
     if (isOpen && allProducts.length === 0) {
       fetchProducts();
     }
-  }, [isOpen]);
+  }, [isOpen, allProducts.length]);
 
   useEffect(() => {
     if (query.length > 1) {

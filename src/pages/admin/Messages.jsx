@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../../firebase';
-import { collection, getDocs, orderBy, query } from 'firebase/firestore';
+import { supabase } from '../../supabase';
 
 const Messages = () => {
   const [messages, setMessages] = useState([]);
@@ -9,13 +8,9 @@ const Messages = () => {
   useEffect(() => {
     const fetchMessages = async () => {
       try {
-        const q = query(collection(db, "messages"), orderBy("date", "desc"));
-        const snapshot = await getDocs(q);
-        const list = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setMessages(list);
+        const { data: rows, error } = await supabase.from('messages').select('*').order('date', { ascending: false });
+        if (error) throw error;
+        setMessages(rows || []);
       } catch (error) {
         console.error("Error fetching messages:", error);
       } finally {
@@ -44,7 +39,7 @@ const Messages = () => {
               <div className="flex justify-between items-start mb-2">
                 <h3 className="font-bold text-slate-900 text-lg">{msg.subject}</h3>
                 <span className="text-xs text-slate-400 whitespace-nowrap ml-4">
-                  {msg.date?.toDate ? msg.date.toDate().toLocaleString() : 'Just now'}
+                  {msg.date ? new Date(msg.date).toLocaleString() : 'Just now'}
                 </span>
               </div>
               

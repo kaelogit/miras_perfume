@@ -1,23 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { db } from '../../firebase';
-import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { supabase, mapProduct } from '../../supabase';
 import { Link } from 'react-router-dom';
 
 const AllProducts = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
 
   // Fetch Products
   const fetchProducts = async () => {
+    setFetchError(null);
     try {
-      const querySnapshot = await getDocs(collection(db, "products"));
-      const list = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setProducts(list);
+      const { data: rows, error: fetchErr } = await supabase.from('products').select('*');
+      if (fetchErr) throw fetchErr;
+      setProducts((rows || []).map(mapProduct));
     } catch (error) {
       console.error("Error fetching products:", error);
+      setFetchError(error?.message || String(error));
     } finally {
       setLoading(false);
     }
@@ -31,16 +30,27 @@ const AllProducts = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this product? This cannot be undone.")) {
       try {
-        await deleteDoc(doc(db, "products", id));
-        // Remove from local state instantly
+        const { error } = await supabase.from('products').delete().eq('id', id);
+        if (error) throw error;
         setProducts(products.filter(product => product.id !== id));
-      } catch (error) {
+      } catch {
         alert("Error deleting product");
       }
     }
   };
 
   if (loading) return <div className="p-8">Loading Inventory...</div>;
+
+  if (fetchError) {
+    return (
+      <div className="max-w-6xl mx-auto p-8">
+        <p className="text-red-600 font-medium mb-2">Could not load products</p>
+        <p className="text-slate-500 text-sm mb-4">{fetchError}</p>
+        <p className="text-slate-400 text-xs">Check Firestore rules in Firebase Console (Firestore → Rules).</p>
+        <button onClick={fetchProducts} className="mt-4 text-brand-DEFAULT underline text-sm">Try again</button>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto">

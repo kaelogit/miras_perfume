@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { db } from '../firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { supabase, mapProduct } from '../supabase';
 
 const Shop = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -19,6 +18,7 @@ const Shop = () => {
   const [products, setProducts] = useState([]); 
   const [filteredProducts, setFilteredProducts] = useState([]); 
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
   
   // Filter UI States
   const [activeGender, setActiveGender] = useState('all');
@@ -36,17 +36,17 @@ const Shop = () => {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        const querySnapshot = await getDocs(collection(db, "products"));
-        const productsList = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+        const { data: rows, error: fetchErr } = await supabase.from('products').select('*');
+        if (fetchErr) throw fetchErr;
+        const productsList = (rows || []).map(mapProduct);
         setProducts(productsList);
         setFilteredProducts(productsList); 
         
-        organizeBrands(productsList); 
+        organizeBrands(productsList);
+        setFetchError(null);
       } catch (error) {
         console.error("Error fetching products:", error);
+        setFetchError(error?.message || String(error));
       } finally {
         setLoading(false);
       }
@@ -190,6 +190,16 @@ const Shop = () => {
     return (
       <div className="min-h-screen pt-32 pb-20 flex justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900"></div>
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="min-h-screen pt-32 pb-20 flex flex-col items-center justify-center px-4">
+        <p className="text-red-600 font-medium mb-2">Could not load products</p>
+        <p className="text-slate-500 text-sm text-center max-w-md mb-4">{fetchError}</p>
+        <p className="text-slate-400 text-xs">Check the browser console (F12) and Firestore rules in Firebase Console.</p>
       </div>
     );
   }

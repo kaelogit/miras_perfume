@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { auth } from '../../firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { supabase } from '../../supabase';
 import { useNavigate } from 'react-router-dom';
 
 const AdminLogin = () => {
@@ -11,10 +10,12 @@ const AdminLogin = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setError('');
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      navigate('/admin/dashboard'); 
-    } catch (err) {
+      const { error: err } = await supabase.auth.signInWithPassword({ email, password });
+      if (err) throw err;
+      navigate('/admin/dashboard');
+    } catch {
       setError('Invalid credentials. Access denied.');
     }
   };
@@ -24,15 +25,15 @@ const AdminLogin = () => {
       <div className="bg-white p-8 rounded-sm shadow-md w-full max-w-md">
         <h1 className="font-serif text-2xl text-slate-900 mb-2 text-center">Mira's Admin</h1>
         <p className="text-xs text-slate-500 text-center mb-8 uppercase tracking-widest">Restricted Access</p>
-        
+
         {error && <div className="bg-red-50 text-red-600 p-3 text-sm mb-4 text-center">{error}</div>}
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label className="block text-xs font-bold uppercase text-slate-500 mb-1">Email</label>
-            <input 
-              type="email" 
-              value={email} 
+            <input
+              type="email"
+              value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full border p-3 rounded-sm focus:border-slate-900 outline-none"
               placeholder="admin@miras.com"
@@ -40,9 +41,9 @@ const AdminLogin = () => {
           </div>
           <div>
             <label className="block text-xs font-bold uppercase text-slate-500 mb-1">Password</label>
-            <input 
-              type="password" 
-              value={password} 
+            <input
+              type="password"
+              value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full border p-3 rounded-sm focus:border-slate-900 outline-none"
               placeholder="••••••••"

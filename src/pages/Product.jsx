@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { db } from '../firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { supabase, mapProduct } from '../supabase';
 
 const Product = () => {
   const { id } = useParams(); 
@@ -19,16 +18,14 @@ const Product = () => {
       setLoading(true);
       setError(false);
       try {
-        const docRef = doc(db, "products", id);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          setProduct({ id: docSnap.id, ...docSnap.data() });
-          setActiveImage(0); 
-          setQuantity(1);
-        } else {
+        const { data: row, error: fetchErr } = await supabase.from('products').select('*').eq('id', id).single();
+        if (fetchErr || !row) {
           setError(true);
+          return;
         }
+        setProduct(mapProduct(row));
+        setActiveImage(0);
+        setQuantity(1);
       } catch (err) {
         console.error("Error fetching product:", err);
         setError(true);

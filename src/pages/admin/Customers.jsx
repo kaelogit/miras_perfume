@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { db } from '../../firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { supabase } from '../../supabase';
 
 const Customers = () => {
   const [customers, setCustomers] = useState([]);
@@ -9,32 +8,29 @@ const Customers = () => {
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "orders"));
+        const { data: rows, error } = await supabase.from('orders').select('*');
+        if (error) throw error;
         const customerMap = {};
-
-        querySnapshot.forEach(doc => {
-          const data = doc.data();
-          const email = data.customer.email;
-          
+        (rows || []).forEach((row) => {
+          const data = row;
+          const email = data.customer?.email;
+          if (!email) return;
           if (!customerMap[email]) {
             customerMap[email] = {
-              name: `${data.customer.firstName} ${data.customer.lastName}`,
-              email: email,
+              name: `${data.customer.firstName || ''} ${data.customer.lastName || ''}`.trim(),
+              email,
               phone: data.customer.phone,
               totalOrders: 0,
               totalSpent: 0,
               lastOrder: data.date
             };
           }
-          
           customerMap[email].totalOrders += 1;
           customerMap[email].totalSpent += Number(data.total);
-          
-          if (data.date > customerMap[email].lastOrder) {
+          if (data.date && (!customerMap[email].lastOrder || new Date(data.date) > new Date(customerMap[email].lastOrder))) {
             customerMap[email].lastOrder = data.date;
           }
         });
-
         setCustomers(Object.values(customerMap));
       } catch (error) {
         console.error("Error fetching customers:", error);

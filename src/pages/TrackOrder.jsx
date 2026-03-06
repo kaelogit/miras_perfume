@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { db } from '../firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { supabase, mapOrder, formatOrderDate } from '../supabase';
 
 const TrackOrder = () => {
   const [orderId, setOrderId] = useState('');
@@ -16,20 +15,24 @@ const TrackOrder = () => {
 
     try {
       const formattedId = orderId.trim().toUpperCase();
-      const q = query(collection(db, "orders"), where("orderId", "==", formattedId));
-      const querySnapshot = await getDocs(q);
-
-      if (!querySnapshot.empty) {
-        const orderData = querySnapshot.docs[0].data();
+      const { data: rows, error: fetchErr } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('order_id', formattedId)
+        .limit(1);
+      if (fetchErr) throw fetchErr;
+      const row = rows?.[0];
+      if (row) {
+        const order = mapOrder(row);
         setStatusResult({
-          status: orderData.status,
-          date: orderData.date.toDate().toLocaleDateString(),
-          total: orderData.total,
+          status: order.status,
+          date: formatOrderDate(order.date),
+          total: order.total,
           id: formattedId,
-          items: orderData.items || [], 
-          customer: orderData.customer || {},
-          courier: orderData.courier,
-          trackingNumber: orderData.trackingNumber
+          items: order.items || [],
+          customer: order.customer || {},
+          courier: order.courier,
+          trackingNumber: order.trackingNumber
         });
       } else {
         setError('Order ID not found. Please check your receipt.');
