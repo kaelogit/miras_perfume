@@ -1,6 +1,7 @@
 import React from 'react';
 import { useCart } from '../context/CartContext';
 import { Link } from 'react-router-dom';
+import { getEffectivePrice, isFlashSaleActive } from '../supabase';
 
 const CartDrawer = () => {
   const { isCartOpen, setIsCartOpen, cartItems, removeFromCart, cartTotal } = useCart();
@@ -40,7 +41,7 @@ const CartDrawer = () => {
             cartItems.map((item) => (
               <div key={item.id} className="flex gap-4">
                 <div className="w-20 h-24 bg-slate-50 rounded-sm overflow-hidden flex-shrink-0">
-                  <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                  <img src={item.image} alt={item.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                 </div>
                 <div className="flex-1 flex flex-col justify-between">
                   <div>
@@ -49,7 +50,12 @@ const CartDrawer = () => {
                   </div>
                   <div className="flex justify-between items-end">
                     <p className="text-sm text-slate-600">Qty: {item.quantity}</p>
-                    <p className="text-sm font-medium text-slate-900">₦{(item.price * item.quantity).toLocaleString()}</p>
+                    <div className="text-right">
+                      {isFlashSaleActive(item) && (
+                        <p className="text-xs text-slate-400 line-through">₦{(item.price * item.quantity).toLocaleString()}</p>
+                      )}
+                      <p className="text-sm font-medium text-slate-900">₦{(getEffectivePrice(item) * item.quantity).toLocaleString()}</p>
+                    </div>
                   </div>
                 </div>
                 <button onClick={() => removeFromCart(item.id)} className="text-slate-300 hover:text-red-500 self-start p-1">

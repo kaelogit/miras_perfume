@@ -15,10 +15,34 @@ CREATE TABLE IF NOT EXISTS products (
   image TEXT,
   images TEXT[] DEFAULT '{}',
   search_keywords TEXT[] DEFAULT '{}',
+  sold_count INTEGER NOT NULL DEFAULT 0,
   is_best_seller BOOLEAN DEFAULT false,
   is_new_arrival BOOLEAN DEFAULT false,
+  is_flash_sale BOOLEAN DEFAULT false,
+  flash_sale_price NUMERIC,
+  flash_sale_ends_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT now()
 );
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'products_flash_price_check'
+  ) THEN
+    ALTER TABLE products
+      ADD CONSTRAINT products_flash_price_check
+      CHECK (
+        (is_flash_sale = false AND flash_sale_price IS NULL)
+        OR
+        (is_flash_sale = true AND flash_sale_price IS NOT NULL AND flash_sale_price > 0 AND flash_sale_price < price)
+      );
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_products_flash_sale ON products(is_flash_sale);
+CREATE INDEX IF NOT EXISTS idx_products_created_at ON products(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_products_sold_count ON products(sold_count DESC);
+CREATE INDEX IF NOT EXISTS idx_products_flash_ends ON products(flash_sale_ends_at);
 
 -- Orders (replaces Firestore "orders")
 CREATE TABLE IF NOT EXISTS orders (

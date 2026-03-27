@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { supabase, mapProduct } from '../supabase';
+import { supabase, mapProduct, getEffectivePrice, isFlashSaleActive, formatFlashCountdown } from '../supabase';
+import Seo from '../components/Seo';
 
 const Product = () => {
   const { id } = useParams(); 
@@ -62,7 +63,32 @@ const Product = () => {
   
   const currentStock = product.stock || 0;
   const isOutOfStock = currentStock <= 0;
-  const isLowStock = currentStock > 0 && currentStock < 5;
+  const isLowStock = currentStock > 0 && currentStock <= 3;
+  const onFlash = isFlashSaleActive(product);
+  const activePrice = getEffectivePrice(product);
+  const description = product.description
+    ? product.description.slice(0, 155)
+    : `Shop ${product.name} by ${product.brand} at Mira's Perfume.`;
+  const productSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    brand: {
+      '@type': 'Brand',
+      name: product.brand,
+    },
+    description,
+    image: images.filter(Boolean),
+    sku: product.id,
+    offers: {
+      '@type': 'Offer',
+      priceCurrency: 'NGN',
+      price: String(activePrice),
+      availability: currentStock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      url: `${window.location.origin}/product/${product.id}`,
+      itemCondition: 'https://schema.org/NewCondition',
+    },
+  };
 
   const handleIncreaseQty = () => {
     if (quantity < currentStock) setQuantity(q => q + 1);
@@ -73,7 +99,16 @@ const Product = () => {
   };
 
   return (
-    <div className="bg-white min-h-screen pt-32 pb-20">
+    <div className="bg-white min-h-screen pt-32 pb-28 md:pb-20">
+      <Seo
+        title={`${product.name} by ${product.brand} | Mira's Perfume`}
+        description={description}
+        path={`/product/${product.id}`}
+        image={images[0] || '/images/social-share.jpg'}
+        type="product"
+        jsonLd={productSchema}
+        jsonLdId="product-schema"
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
@@ -90,7 +125,7 @@ const Product = () => {
                       activeImage === index ? "border-brand-DEFAULT opacity-100" : "border-slate-200 opacity-60 hover:opacity-100"
                     }`}
                   >
-                    <img src={img} alt="" className="w-full h-full object-cover" />
+                    <img src={img} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>
@@ -100,6 +135,9 @@ const Product = () => {
               <img 
                 src={images[activeImage]} 
                 alt={product.name} 
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
                 className="w-auto h-full max-h-full object-contain transition-transform duration-500 hover:scale-105 mix-blend-multiply" 
               />
               
@@ -120,9 +158,27 @@ const Product = () => {
               <h1 className="font-serif text-3xl md:text-4xl text-slate-900 mb-4 leading-tight">
                 {product.name}
               </h1>
-              <p className="text-2xl font-light text-slate-800">
-                ₦{product.price?.toLocaleString()}
-              </p>
+              {product.soldCount > 0 && (
+                <p className="text-xs text-slate-500 uppercase tracking-wider mb-3">
+                  Sold {product.soldCount.toLocaleString()} times
+                </p>
+              )}
+              {onFlash ? (
+                <div className="flex items-center gap-3 flex-wrap">
+                  <p className="text-lg text-slate-400 line-through">₦{product.price?.toLocaleString()}</p>
+                  <p className="text-3xl font-semibold text-red-600">₦{activePrice.toLocaleString()}</p>
+                  <span className="bg-red-600 text-white text-[10px] font-bold px-2 py-1 uppercase tracking-widest rounded">Flash Drop</span>
+                  {formatFlashCountdown(product.flashSaleEndsAt) && (
+                    <span className="bg-red-100 text-red-700 text-[10px] font-bold px-2 py-1 uppercase tracking-widest rounded">
+                      Ends in {formatFlashCountdown(product.flashSaleEndsAt)}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <p className="text-2xl font-light text-slate-800">
+                  ₦{product.price?.toLocaleString()}
+                </p>
+              )}
             </div>
 
             <div className="prose prose-slate text-slate-600 font-light leading-relaxed text-sm md:text-base">
@@ -154,7 +210,7 @@ const Product = () => {
                     : 'bg-slate-900 hover:bg-brand-DEFAULT'
                 }`}
               >
-                {isOutOfStock ? "Out of Stock" : `Add to Cart — ₦${(product.price * quantity).toLocaleString()}`}
+                {isOutOfStock ? "Out of Stock" : `Add to Cart — ₦${(activePrice * quantity).toLocaleString()}`}
               </button>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-xs text-slate-500 pt-2">
@@ -198,6 +254,29 @@ const Product = () => {
             </div>
 
           </div>
+        </div>
+      </div>
+
+      <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden border-t border-slate-200 bg-white/95 backdrop-blur px-4 py-3">
+        <div className="max-w-7xl mx-auto flex items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-slate-500 uppercase tracking-wider truncate">{product.name}</p>
+            <p className="font-semibold text-slate-900">₦{(activePrice * quantity).toLocaleString()}</p>
+          </div>
+          <div className="flex items-center border border-slate-300 rounded-sm">
+            <button onClick={handleDecreaseQty} disabled={isOutOfStock} className="px-3 py-2 text-slate-600 disabled:opacity-50">-</button>
+            <span className="px-3 py-2 text-sm font-medium text-slate-900 w-8 text-center">{quantity}</span>
+            <button onClick={handleIncreaseQty} disabled={isOutOfStock || quantity >= currentStock} className="px-3 py-2 text-slate-600 disabled:opacity-50">+</button>
+          </div>
+          <button
+            onClick={() => addToCart(product, quantity)}
+            disabled={isOutOfStock}
+            className={`px-4 py-3 text-xs font-bold uppercase tracking-widest rounded-sm ${
+              isOutOfStock ? 'bg-slate-300 text-white cursor-not-allowed' : 'bg-slate-900 text-white'
+            }`}
+          >
+            {isOutOfStock ? 'Out' : 'Add'}
+          </button>
         </div>
       </div>
     </div>

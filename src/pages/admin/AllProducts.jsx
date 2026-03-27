@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { supabase, mapProduct } from '../../supabase';
+import { supabase, mapProduct, getEffectivePrice, isFlashSaleActive } from '../../supabase';
 import { Link } from 'react-router-dom';
 
 const AllProducts = () => {
@@ -46,7 +46,7 @@ const AllProducts = () => {
       <div className="max-w-6xl mx-auto p-8">
         <p className="text-red-600 font-medium mb-2">Could not load products</p>
         <p className="text-slate-500 text-sm mb-4">{fetchError}</p>
-        <p className="text-slate-400 text-xs">Check Firestore rules in Firebase Console (Firestore → Rules).</p>
+        <p className="text-slate-400 text-xs">Check Supabase policies and connectivity in the Dashboard if this persists.</p>
         <button onClick={fetchProducts} className="mt-4 text-brand-DEFAULT underline text-sm">Try again</button>
       </div>
     );
@@ -87,7 +87,16 @@ const AllProducts = () => {
                     </div>
                   </td>
                   <td className="p-4 text-sm text-slate-600">{product.brand}</td>
-                  <td className="p-4 text-sm text-slate-900 font-medium">₦{product.price.toLocaleString()}</td>
+                  <td className="p-4 text-sm text-slate-900 font-medium">
+                    {isFlashSaleActive(product) ? (
+                      <div>
+                        <p className="text-xs text-slate-400 line-through">₦{product.price.toLocaleString()}</p>
+                        <p className="text-red-600 font-semibold">₦{getEffectivePrice(product).toLocaleString()}</p>
+                      </div>
+                    ) : (
+                      <>₦{product.price.toLocaleString()}</>
+                    )}
+                  </td>
                   <td className="p-4">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                       product.stock > 5 ? 'bg-green-100 text-green-800' : 
@@ -99,12 +108,20 @@ const AllProducts = () => {
                   </td>
                   <td className="p-4 text-right">
                     {/* FIXED: Larger button area for mobile touch */}
-                    <button 
-                      onClick={() => handleDelete(product.id)}
-                      className="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white px-4 py-2 rounded-sm text-xs font-bold uppercase tracking-wide transition-colors"
-                    >
-                      Delete
-                    </button>
+                    <div className="flex justify-end gap-2">
+                      <Link
+                        to={`/admin/edit-product/${product.id}`}
+                        className="bg-slate-50 text-slate-700 hover:bg-slate-800 hover:text-white px-4 py-2 rounded-sm text-xs font-bold uppercase tracking-wide transition-colors"
+                      >
+                        Edit
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(product.id)}
+                        className="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white px-4 py-2 rounded-sm text-xs font-bold uppercase tracking-wide transition-colors"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

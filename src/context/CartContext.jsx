@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { getEffectivePrice } from '../supabase';
 
 const CartContext = createContext();
 
@@ -44,7 +45,7 @@ export const CartProvider = ({ children }) => {
 
   const clearNotification = () => setNotification(null);
 
-  const cartTotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+  const cartTotal = cartItems.reduce((total, item) => total + (getEffectivePrice(item) * item.quantity), 0);
   const cartCount = cartItems.reduce((count, item) => count + item.quantity, 0);
 
   return (

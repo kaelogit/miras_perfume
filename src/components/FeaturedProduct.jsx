@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase, mapProduct } from '../supabase';
+import { supabase, mapProduct, getEffectivePrice, isFlashSaleActive } from '../supabase';
 import { useCart } from '../context/CartContext';
 import { Link } from 'react-router-dom';
 
@@ -40,6 +40,8 @@ const FeaturedProduct = () => {
               <img 
                 src={product.image} 
                 alt={product.name} 
+                loading="lazy"
+                decoding="async"
                 className="relative z-10 w-[70%] lg:w-full max-w-sm mx-auto rounded-lg shadow-xl transform hover:-translate-y-2 transition-transform duration-500 cursor-pointer object-contain bg-white/50"
               />
             </Link>
@@ -54,6 +56,11 @@ const FeaturedProduct = () => {
                 <h3 className="text-slate-500 text-sm md:text-lg uppercase tracking-wide font-medium">
                     {product.brand}
                 </h3>
+                {product.soldCount > 0 && (
+                  <p className="text-[11px] text-slate-500 mt-1 uppercase tracking-wider">
+                    Sold {product.soldCount.toLocaleString()} times
+                  </p>
+                )}
             </div>
             
             <Link to={`/product/${product.id}`}>
@@ -77,7 +84,14 @@ const FeaturedProduct = () => {
             )}
 
             <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
-              <p className="font-serif text-2xl md:text-3xl text-slate-800">₦{product.price.toLocaleString()}</p>
+              {isFlashSaleActive(product) ? (
+                <div className="flex items-center gap-2">
+                  <p className="text-slate-400 line-through text-sm md:text-base">₦{product.price.toLocaleString()}</p>
+                  <p className="font-serif text-2xl md:text-3xl text-red-600">₦{getEffectivePrice(product).toLocaleString()}</p>
+                </div>
+              ) : (
+                <p className="font-serif text-2xl md:text-3xl text-slate-800">₦{product.price.toLocaleString()}</p>
+              )}
               <button 
                 onClick={() => addToCart(product, 1)}
                 className="px-8 py-3 bg-slate-900 text-white text-xs md:text-sm font-bold uppercase tracking-widest hover:bg-brand-DEFAULT transition-colors duration-300 rounded-sm shadow-lg"

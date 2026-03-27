@@ -44,6 +44,9 @@ const Hero = () => {
                  <img 
                    src={currentImage} 
                    alt="Luxury Perfume Display" 
+                   loading="eager"
+                   fetchPriority="high"
+                   decoding="async"
                    className="w-full h-full object-cover grayscale-[10%] hover:grayscale-0 transition-all duration-1000 ease-out animate-fade-in"
                  />
                )}

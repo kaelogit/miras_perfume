@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabase';
+import Seo from '../components/Seo';
 
 const Brands = () => {
   const [brandGroups, setBrandGroups] = useState({});
@@ -42,6 +43,12 @@ const Brands = () => {
 
   return (
     <div className="bg-white min-h-screen pt-32 pb-20">
+      <Seo
+        title="Perfume Brands | Mira's Perfume"
+        description="Discover authentic luxury perfume brands available at Mira's Perfume. Explore our curated fragrance houses from A to Z."
+        path="/brands"
+        image="/images/social-share.jpg"
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div className="text-center mb-16">

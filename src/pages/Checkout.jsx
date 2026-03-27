@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabase';
+import { getEffectivePrice, isFlashSaleActive } from '../supabase';
 import { usePaystackPayment } from 'react-paystack';
 
 const Checkout = () => {
@@ -22,6 +23,8 @@ const Checkout = () => {
   ];
 
   const finalTotal = cartTotal; 
+  const totalOriginal = cartItems.reduce((sum, item) => sum + ((Number(item.price) || 0) * item.quantity), 0);
+  const totalSavings = Math.max(0, totalOriginal - finalTotal);
 
   const config = {
     reference: (new Date()).getTime().toString(),
@@ -208,15 +211,32 @@ const Checkout = () => {
                     <h4 className="font-serif text-sm text-slate-900">{item.name}</h4>
                     <p className="text-xs text-slate-500 uppercase tracking-wide">{item.brand}</p>
                   </div>
-                  <p className="text-sm font-medium text-slate-900">₦{(item.price * item.quantity).toLocaleString()}</p>
+                  <div className="text-right">
+                    {isFlashSaleActive(item) && (
+                      <p className="text-xs text-slate-400 line-through">₦{(item.price * item.quantity).toLocaleString()}</p>
+                    )}
+                    <p className="text-sm font-medium text-slate-900">₦{(getEffectivePrice(item) * item.quantity).toLocaleString()}</p>
+                  </div>
                 </div>
               ))}
             </div>
             <div className="border-t border-slate-200 pt-6 space-y-3">
+              {totalSavings > 0 && (
+                <div className="flex justify-between text-sm text-slate-600">
+                  <span>Original Total</span>
+                  <span className="line-through">₦{totalOriginal.toLocaleString()}</span>
+                </div>
+              )}
               <div className="flex justify-between text-sm text-slate-600">
                 <span>Subtotal</span>
                 <span>₦{cartTotal.toLocaleString()}</span>
               </div>
+              {totalSavings > 0 && (
+                <div className="flex justify-between text-sm font-semibold text-green-700">
+                  <span>You Save</span>
+                  <span>₦{totalSavings.toLocaleString()}</span>
+                </div>
+              )}
               <div className="flex justify-between text-sm text-slate-600">
                 <span>Shipping</span>
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Pay on Delivery</span>

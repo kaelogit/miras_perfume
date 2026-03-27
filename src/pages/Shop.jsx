@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { supabase, mapProduct } from '../supabase';
+import { supabase, mapProduct, getEffectivePrice, isFlashSaleActive } from '../supabase';
+import Seo from '../components/Seo';
 
 const Shop = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -25,6 +26,7 @@ const Shop = () => {
   const [activeType, setActiveType] = useState('all');
   const [activeScent, setActiveScent] = useState('all');
   const [activeBrand, setActiveBrand] = useState('all');
+  const [sortBy, setSortBy] = useState('newest');
 
   // UI States
   const [isFilterOpen, setIsFilterOpen] = useState(false); // Mobile Drawer
@@ -169,8 +171,18 @@ const Shop = () => {
       result = products.filter(p => p.isNewArrival);
     }
 
+    if (sortBy === 'price-low-high') {
+      result = [...result].sort((a, b) => getEffectivePrice(a) - getEffectivePrice(b));
+    } else if (sortBy === 'price-high-low') {
+      result = [...result].sort((a, b) => getEffectivePrice(b) - getEffectivePrice(a));
+    } else if (sortBy === 'best-selling') {
+      result = [...result].sort((a, b) => (b.soldCount || 0) - (a.soldCount || 0));
+    } else if (sortBy === 'newest') {
+      result = [...result].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    }
+
     setFilteredProducts(result);
-  }, [activeGender, activeType, activeScent, activeBrand, initialFilter, products]);
+  }, [activeGender, activeType, activeScent, activeBrand, initialFilter, products, sortBy]);
 
   const handleQuickAdd = (e, product) => {
     e.preventDefault(); 
@@ -183,6 +195,7 @@ const Shop = () => {
     setActiveType('all');
     setActiveScent('all');
     setActiveBrand('all');
+    setSortBy('newest');
     setSearchParams({});
   };
 
@@ -199,7 +212,7 @@ const Shop = () => {
       <div className="min-h-screen pt-32 pb-20 flex flex-col items-center justify-center px-4">
         <p className="text-red-600 font-medium mb-2">Could not load products</p>
         <p className="text-slate-500 text-sm text-center max-w-md mb-4">{fetchError}</p>
-        <p className="text-slate-400 text-xs">Check the browser console (F12) and Firestore rules in Firebase Console.</p>
+        <p className="text-slate-400 text-xs">Check the browser console (F12) and Supabase policies/connectivity.</p>
       </div>
     );
   }
@@ -334,6 +347,12 @@ const Shop = () => {
 
   return (
     <div className="bg-white min-h-screen pt-32 pb-20">
+      <Seo
+        title={`${getTitle()} | Mira's Perfume`}
+        description={`Browse ${getTitle().toLowerCase()} at Mira's Perfume. Shop authentic fragrances with fast delivery across Nigeria.`}
+        path={`/shop${window.location.search || ''}`}
+        image="/images/social-share.jpg"
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}
@@ -342,6 +361,19 @@ const Shop = () => {
             {getTitle()}
           </h1>
           <div className="w-24 h-1 bg-brand-DEFAULT mx-auto mt-4"></div>
+
+          <div className="mt-6 flex justify-center">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="border border-slate-300 bg-white text-sm text-slate-700 px-4 py-2 rounded-sm"
+            >
+              <option value="newest">Sort: Newest</option>
+              <option value="best-selling">Sort: Best Selling</option>
+              <option value="price-low-high">Sort: Price Low to High</option>
+              <option value="price-high-low">Sort: Price High to Low</option>
+            </select>
+          </div>
           
           {/* Mobile Filter Button */}
           <div className="md:hidden mt-6">
@@ -395,6 +427,9 @@ const Shop = () => {
                   <Link to={`/product/${product.id}`} className="block">
                     {/* Image */}
                     <div className="relative aspect-[4/5] bg-slate-100 overflow-hidden rounded-sm mb-3">
+                      {isFlashSaleActive(product) && (
+                        <span className="absolute top-2 right-2 bg-red-600 text-white text-[10px] font-bold px-2 py-1 uppercase tracking-widest z-10">Flash Drop</span>
+                      )}
                       {product.isBestSeller && (
                         <span className="absolute top-2 left-2 bg-slate-900 text-white text-[10px] font-bold px-2 py-1 uppercase tracking-widest z-10">Best Seller</span>
                       )}
@@ -402,7 +437,7 @@ const Shop = () => {
                         <span className="absolute top-2 left-2 bg-brand-DEFAULT text-white text-[10px] font-bold px-2 py-1 uppercase tracking-widest z-10">New Arrival</span>
                       )}
                       
-                      <img src={product.image} alt={product.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                      <img src={product.image} alt={product.name} loading="lazy" decoding="async" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                     </div>
 
                     {/* Info */}
@@ -414,9 +449,30 @@ const Shop = () => {
                             <h2 className="font-serif text-sm md:text-base text-slate-900 mb-1 leading-tight group-hover:text-brand-DEFAULT transition-colors truncate">
                                 {product.name}
                             </h2>
-                            <p className="text-slate-600 font-light text-sm md:text-sm">
+                            {product.soldCount > 0 && (
+                              <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">
+                                Sold {product.soldCount.toLocaleString()} times
+                              </p>
+                            )}
+                            {product.stock > 0 && product.stock <= 3 && (
+                              <p className="text-[10px] font-bold text-orange-600 uppercase tracking-wider mb-1">
+                                Only {product.stock} left
+                              </p>
+                            )}
+                            {isFlashSaleActive(product) ? (
+                              <div className="flex items-center gap-2">
+                                <p className="text-slate-400 line-through text-xs md:text-sm">
+                                  ₦{product.price ? product.price.toLocaleString() : "0"}
+                                </p>
+                                <p className="text-red-600 font-semibold text-sm md:text-sm">
+                                  ₦{getEffectivePrice(product).toLocaleString()}
+                                </p>
+                              </div>
+                            ) : (
+                              <p className="text-slate-600 font-light text-sm md:text-sm">
                                 ₦{product.price ? product.price.toLocaleString() : "0"}
-                            </p>
+                              </p>
+                            )}
                         </div>
 
                         {/* Quick Add Button */}
