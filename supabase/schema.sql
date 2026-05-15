@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS orders (
 
 CREATE INDEX IF NOT EXISTS idx_orders_order_id ON orders(order_id);
 CREATE INDEX IF NOT EXISTS idx_orders_date ON orders(date DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_payment_ref_unique ON orders(payment_ref) WHERE payment_ref IS NOT NULL;
 
 -- Messages (replaces Firestore "messages")
 CREATE TABLE IF NOT EXISTS messages (

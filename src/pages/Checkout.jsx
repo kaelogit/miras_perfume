@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { Link } from 'react-router-dom';
-import { supabase } from '../supabase';
 import { getEffectivePrice, isFlashSaleActive } from '../supabase';
 import { usePaystackPayment } from 'react-paystack';
 
@@ -46,31 +45,41 @@ const Checkout = () => {
     setLoading(true); 
     console.log("PAYMENT SUCCESSFUL! Ref:", reference);
 
-    const safetyTimer = setTimeout(() => {
-      console.log("Force redirecting...");
-      clearCart();
-      window.location.href = '/success';
-    }, 3000);
-
     try {
-      const orderData = {
-        order_id: `MIRA-${Date.now().toString().slice(-6)}`,
-        customer: formData,
-        items: cartItems,
-        total: finalTotal,
-        payment_ref: reference?.reference || null,
-        status: 'Pending',
-      };
+      const paymentRef = reference?.reference;
+      const orderItems = cartItems.map((item) => ({
+        id: item.id,
+        quantity: item.quantity,
+      }));
 
-      const { error } = await supabase.from('orders').insert(orderData);
-      if (error) throw error;
-      console.log("Order Saved to DB");
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-paystack-checkout`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            paymentRef,
+            customer: formData,
+            items: orderItems,
+          }),
+        }
+      );
 
+      const payload = await response.json();
+      if (!response.ok || !payload?.ok) {
+        throw new Error(payload?.error || 'Server verification failed. Order not saved.');
+      }
+      console.log("Order saved after server-side verification");
     } catch (error) {
-      console.error("Order save error:", error);
+      console.error("Order verification/save error:", error);
+      setLoading(false);
+      alert(error?.message || "Could not validate payment on server. Please contact support with your payment reference.");
+      return;
     }
-
-    clearTimeout(safetyTimer); 
     clearCart();
     window.location.href = '/success'; 
   };

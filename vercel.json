@@ -1,0 +1,8 @@
+{
+  "functions": {
+    "api/r2-upload.js": {
+      "maxDuration": 60,
+      "memory": 1024
+    }
+  }
+}

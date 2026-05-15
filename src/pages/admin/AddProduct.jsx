@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase, PRODUCT_IMAGES_BUCKET } from '../../supabase';
+import { supabase } from '../../supabase';
+import { compressImage } from '../../lib/compressImage';
+import { uploadProductImage } from '../../lib/uploadProductImage';
 
 const AddProduct = () => {
   const navigate = useNavigate();
@@ -70,23 +72,6 @@ const AddProduct = () => {
     if (index <= mainImageIndex) setMainImageIndex(0);
   };
 
-  const UPLOAD_TIMEOUT_MS = 20000; // 20 seconds – then show error
-
-  const uploadToSupabase = async (file) => {
-    const ext = file.name.split('.').pop() || 'jpg';
-    const path = `products/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    const uploadPromise = (async () => {
-      const { error } = await supabase.storage.from(PRODUCT_IMAGES_BUCKET).upload(path, file, { upsert: false });
-      if (error) throw error;
-      const { data: { publicUrl } } = supabase.storage.from(PRODUCT_IMAGES_BUCKET).getPublicUrl(path);
-      return publicUrl;
-    })();
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Image upload timed out. Check your connection and Supabase Storage.')), UPLOAD_TIMEOUT_MS)
-    );
-    return Promise.race([uploadPromise, timeoutPromise]);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage('');
@@ -102,8 +87,10 @@ const AddProduct = () => {
     try {
       const imageUrls = [];
       for (let i = 0; i < imageFiles.length; i++) {
+        setStatus(`Compressing image ${i + 1} of ${imageFiles.length}...`);
+        const compressed = await compressImage(imageFiles[i]);
         setStatus(`Uploading image ${i + 1} of ${imageFiles.length}...`);
-        const url = await uploadToSupabase(imageFiles[i]);
+        const url = await uploadProductImage(compressed);
         imageUrls.push(url);
       }
 

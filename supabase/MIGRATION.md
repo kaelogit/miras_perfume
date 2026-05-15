@@ -29,7 +29,12 @@
 3. Enter the email and password you want to use for the admin panel (e.g. admin@miras.com).
 4. Use these same credentials on `/admin/login`.
 
-## 5. Install dependencies and run
+## 5. Product images on Cloudflare R2 (recommended)
+
+Supabase Storage egress can exceed the free tier when many product images are served.  
+For **new uploads**, use R2 instead: follow **`supabase/R2-PHASE-1.md`**. The Edge Function returns a **presigned URL**; the browser uploads directly to R2 (avoids TLS issues from some Edge runtimes to R2).
+
+## 6. Install dependencies and run
 
 ```bash
 npm install --legacy-peer-deps
@@ -37,6 +42,37 @@ npm run dev
 ```
 
 Fill in `.env` with your `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. Paystack key is unchanged.
+
+## 7. Enable secure server-side payment verification (recommended)
+
+This step ensures checkout totals are re-calculated on the server (live DB prices, including flash sales) before an order is created.
+
+1. Deploy edge function:
+
+```bash
+supabase functions deploy verify-paystack-checkout
+```
+
+2. Set edge function secrets (Supabase project):
+
+```bash
+supabase secrets set PAYSTACK_SECRET_KEY=sk_live_xxx
+```
+
+`SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are provided automatically in Supabase Edge Functions.
+
+3. Add idempotency/duplicate protection for payment refs in existing DBs:
+   - Run `supabase/payment-hardening.sql` in SQL Editor.
+
+4. Ensure your frontend `.env` has:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+   - `VITE_PAYSTACK_KEY`
+
+After this, checkout will call the edge function to:
+- verify Paystack transaction reference and paid amount
+- recompute total from server-side product pricing
+- create order only if amounts match
 
 ## Data migration from Firebase (optional)
 
