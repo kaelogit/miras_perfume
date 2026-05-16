@@ -245,11 +245,12 @@ The admin UI POSTs JSON `{ base64, contentType }` to **your own domain**; a serv
    - `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_BASE_URL` = same as your Edge Function secrets for `upload-product-image`
 3. **Build / client** env in Netlify (exposed to Vite at build time — **use** `VITE_` prefix):
    - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_PAYSTACK_KEY`
-   - `VITE_R2_UPLOAD_PROXY_URL=https://mirasperfume.com/api/r2-upload` (match apex vs **www** to your real admin URL)
+   - `VITE_R2_UPLOAD_PROXY_URL=https://mirasperfume.com/api/r2-upload` (match apex vs **www** to your real admin URL)  
+   If uploads still return HTML instead of JSON, either redeploy after fixing `public/_redirects` (see below) or set **`VITE_R2_UPLOAD_PROXY_URL=https://mirasperfume.com/.netlify/functions/r2-upload`** (bypasses the `/api/*` rewrite).
 4. **Localhost admin** can use the same `VITE_R2_UPLOAD_PROXY_URL` pointing at production; the function allows `Origin: http://localhost:5173`.
 5. Optional: `R2_UPLOAD_CORS_ORIGINS` — comma-separated extra allowed origins (e.g. Netlify branch deploy URLs). Defaults include `https://mirasperfume.com`, `https://www.mirasperfume.com`, and localhost.
 
-If you already manage redirects only in the Netlify UI, ensure **`/api/r2-upload`** is rewritten to **`/.netlify/functions/r2-upload`** *before* any catch-all `/* → /index.html` rule (first match wins).
+If you already manage redirects only in the Netlify UI, ensure **`/api/r2-upload`** is rewritten to **`/.netlify/functions/r2-upload`** *before* any catch-all `/* → /index.html` rule (first match wins). This repo ships **`public/_redirects`** with the API line **above** the SPA line so `dist/_redirects` is correct on every build.
 
 ### Vercel (alternative)
 

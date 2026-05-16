@@ -7,7 +7,7 @@
   node_bundler = "esbuild"
   external_node_modules = ["@aws-sdk/client-s3"]
 
-# Same path as Vercel api/r2-upload — SPA fallback must come after this rule in Netlify UI if you duplicate redirects.
+# Also declared in public/_redirects (first line) so publish/dist wins over /* SPA.
 [[redirects]]
   from = "/api/r2-upload"
   to = "/.netlify/functions/r2-upload"

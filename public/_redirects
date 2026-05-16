@@ -1,1 +1,3 @@
-/* /index.html  200
+# API rewrite must come before SPA catch-all (order is first-match).
+/api/r2-upload  /.netlify/functions/r2-upload  200
+/*              /index.html                      200
