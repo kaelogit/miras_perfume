@@ -277,8 +277,7 @@ If you **do not** set `VITE_R2_UPLOAD_PROXY_URL`, the app still uses the Edge Fu
 
 ## What Phase 1 does NOT do yet
 
-- Old products still use old Supabase image URLs (still count toward egress until Phase 2 migration).
-- Phase 2: bulk-copy images to R2 and update `products.image` / `products.images` in the database.
+- Old products may still reference Supabase Storage URLs until you run **Phase 2**: see **`supabase/R2-PHASE-2.md`** and `npm run migrate:images-r2`.
 
 ---
 
